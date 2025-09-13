@@ -28,6 +28,13 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - id: expose
+      shell: bash
+      run: |
+        set -euo pipefail
+        v="/verify/verify-receipt.sh"
+        chmod +x ""
+        echo "verifier=" >> ""
     - name: Install elan (optional)
       if: ${{ inputs.install-elan == 'true' }}
       shell: bash
