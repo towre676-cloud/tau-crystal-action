@@ -60,3 +60,18 @@ Use the verifier that ships inside the action (no curl, no PATH changes):
        ${{ steps.tau.outputs.chain-head }} \
        ${{ steps.tau.outputs.merkle-root }}
 ```
+
+## Bundled verifier usage
+
+No curl, no PATH changes — the verifier ships inside the action:
+```yaml
+- uses: towre676-cloud/tau-crystal-action@v1
+  id: tau
+  with:
+    working-directory: .
+- name: verify receipt (bundled)
+  run: ${{ steps.tau.outputs.verifier }} \
+       ${{ steps.tau.outputs.receipt }} \
+       ${{ steps.tau.outputs.chain-head }} \
+       ${{ steps.tau.outputs.merkle-root }}
+```
