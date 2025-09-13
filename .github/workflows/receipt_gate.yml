@@ -1,0 +1,19 @@
+name: receipt-gate
+on: [push, pull_request]
+
+jobs:
+  attest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: tau
+        uses: towre676-cloud/tau-crystal-action@v1
+        with:
+          working-directory: .
+      - name: verify receipt
+        run: |
+          set -euo pipefail
+          bash verify/verify-receipt.sh \\
+            "${{ steps.tau.outputs.receipt }}" \\
+            "${{ steps.tau.outputs.chain-head }}" \\
+            "${{ steps.tau.outputs.merkle-root }}"
