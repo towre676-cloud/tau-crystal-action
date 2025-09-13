@@ -28,3 +28,19 @@ The receipt binds the commit ID, a Merkle tree over tracked files, and the diges
 ## Outputs and verification
 
 The receipt is plain JSON and ships with a pinned schema in this repository. A bash verifier lets downstream jobs recheck it before deploy with zero extra tools.
+
+## Inputs
+
+| Name               | Required | Default | Description                              |
+|--------------------|---------:|:-------:|------------------------------------------|
+| `working-directory`|   no     |   `.`   | Repository root to measure                |
+| `out`              |   no     |   —     | Write receipt to this path (JSON file)    |
+| `install-elan`     |   no     |  `false`| Install Lean toolchain for proof kernel   |
+
+## Outputs
+
+| Name          | Description                                           |
+|---------------|-------------------------------------------------------|
+| `receipt`     | Path to the emitted JSON receipt                      |
+| `chain-head`  | SHA-256 of the wrapper recorded in the receipt        |
+| `merkle-root` | Tree digest over tracked files for the measured repo  |
