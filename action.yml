@@ -1,9 +1,10 @@
-name: "τ-Crystal Verify"
+name: "tau-crystal-action"
 description: "Receipt-first, Merkle-rooted attestation via pure bash (Lean optional via elan)."
 author: "towre676-cloud"
 branding:
   icon: shield
   color: purple
+
 inputs:
   working-directory:
     description: "Path to verify"
@@ -18,7 +19,7 @@ outputs:
   verifier:
     description: "Absolute path to bundled verifier script"
     value: ${{ steps.expose.outputs.verifier }}
-  receipt-path:
+  receipt:
     description: "Latest receipt JSON path"
     value: ${{ steps.outs.outputs.receipt }}
   chain-head:
@@ -38,6 +39,7 @@ runs:
         v="$GITHUB_ACTION_PATH/verify/verify-receipt.sh"
         chmod +x "$v" || true
         echo "verifier=$v" >> "$GITHUB_OUTPUT"
+
     - name: Install elan (optional)
       if: ${{ inputs.install-elan == 'true' }}
       shell: bash
@@ -46,7 +48,7 @@ runs:
         curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
         echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-    - name: Verify with τ-Crystal
+    - name: Verify with tau-crystal
       shell: bash
       env:
         ACTION_DIR: ${{ github.action_path }}
@@ -65,29 +67,10 @@ runs:
         ACTION_DIR: ${{ github.action_path }}
       working-directory: ${{ inputs.working-directory }}
       run: |
-        mkdir -p .tau_ledger
-        mkdir -p .tau_ledger
         set +H; umask 022
+        mkdir -p .tau_ledger
         bash "$ACTION_DIR/scripts/bin/hash_action_wrapper.sh" "${{ inputs.working-directory }}"
 
-    - name: Collect outputs
-      id: outs
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        set -Eeuo pipefail; set +H; umask 022
-        rcpt=""; head=""; root=""
-        if [ -f .tau_ledger/CHAIN ]; then
-          rcpt=$(awk "{print \$2}" .tau_ledger/CHAIN | tail -n1 || true)
-          head=$(awk "{print \$1}" .tau_ledger/CHAIN | tail -n1 || true)
-        fi
-        [ -z "$rcpt" ] && rcpt=$(ls -1t .tau_ledger/*.json 2>/dev/null | head -n1 || true)
-        if [ -f tau-crystal-manifest.json ]; then
-          root=$(grep -oE '"merkle_root"[[:space:]]*:[[:space:]]*"[^"]*"' tau-crystal-manifest.json | sed -E 's/.*:"([^"]*)".*/\1/' | head -n1 || true)
-        fi
-        echo "receipt=$rcpt" >> "$GITHUB_OUTPUT"
-        echo "head=$head"     >> "$GITHUB_OUTPUT"
-        echo "root=$root"     >> "$GITHUB_OUTPUT"
     - name: Enforce wrapper digest (required)
       shell: bash
       env:
@@ -97,3 +80,22 @@ runs:
         set -Eeuo pipefail; set +H; umask 022
         bash "$ACTION_DIR/scripts/bin/enforce_wrapper_digest.sh" "${{ inputs.working-directory }}"
 
+    - name: Collect outputs
+      id: outs
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -Eeuo pipefail; set +H; umask 022
+        rcpt=""; head=""; root=""
+        if [ -f .tau_ledger/CHAIN ]; then
+          rcpt=$(awk '{print $2}' .tau_ledger/CHAIN | tail -n1 || true)
+          head=$(awk '{print $1}' .tau_ledger/CHAIN | tail -n1 || true)
+        fi
+        [ -z "$rcpt" ] && rcpt=$(ls -1t .tau_ledger/*.json 2>/dev/null | head -n1 || true)
+        if [ -f tau-crystal-manifest.json ]; then
+          root=$(grep -oE '"merkle_root"[[:space:]]*:[[:space:]]*"[^"]*"' tau-crystal-manifest.json \
+                 | sed -E 's/.*:"([^"]*)".*/\1/' | head -n1 || true)
+        fi
+        echo "receipt=$rcpt" >> "$GITHUB_OUTPUT"
+        echo "head=$head"     >> "$GITHUB_OUTPUT"
+        echo "root=$root"     >> "$GITHUB_OUTPUT"
