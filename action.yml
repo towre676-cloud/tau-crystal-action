@@ -48,7 +48,6 @@ runs:
 
     - name: Verify with τ-Crystal
       shell: bash
-  continue-on-error: true
       env:
         ACTION_DIR: ${{ github.action_path }}
       working-directory: ${{ inputs.working-directory }}
@@ -71,7 +70,6 @@ runs:
 
     - name: Enforce wrapper digest (required)
       shell: bash
-  continue-on-error: true
       env:
         ACTION_DIR: ${{ github.action_path }}
       working-directory: ${{ inputs.working-directory }}
