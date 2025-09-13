@@ -65,6 +65,7 @@ runs:
         ACTION_DIR: ${{ github.action_path }}
       working-directory: ${{ inputs.working-directory }}
       run: |
+        mkdir -p .tau_ledger
         set +H; umask 022
         bash "$ACTION_DIR/scripts/bin/hash_action_wrapper.sh" "${{ inputs.working-directory }}"
 
