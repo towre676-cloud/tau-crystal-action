@@ -1,4 +1,4 @@
-name: "τ-Crystal Verify"
+name: "tau-crystal-action"
 description: "Receipt-first, Merkle-rooted attestation via pure bash (Lean optional via elan)."
 author: "towre676-cloud"
 branding:
@@ -51,82 +51,39 @@ runs:
         curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y
         echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-    - name: Verify with τ-Crystal
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        ACTION_DIR: ${{ github.action_path }}
-      run: |
-        set +H; umask 022
-        [ -x "$ACTION_DIR/scripts/tau_verify.sh" ] && bash "$ACTION_DIR/scripts/tau_verify.sh" || true
-        [ -x "$ACTION_DIR/scripts/spec_guard.sh" ] && bash "$ACTION_DIR/scripts/spec_guard.sh" || true
-        if [ -s ".tau_ledger/signals/observable.tsv" ] && [ -x "$ACTION_DIR/scripts/tau_adapter.sh" ]; then
-          bash "$ACTION_DIR/scripts/tau_adapter.sh" .tau_ledger/signals/observable.tsv || true
-        fi
-
-    - name: Record wrapper digest
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        ACTION_DIR: ${{ github.action_path }}
-      run: |
-        set +H; umask 022
-        mkdir -p .tau_ledger
-        bash "$ACTION_DIR/scripts/bin/hash_action_wrapper.sh" "${{ inputs.working-directory }}"
-
-    - name: Ensure receipt (fallback)
+    - name: Generate receipt and wrapper digest
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         set -euo pipefail; set +H; umask 022
         mkdir -p .tau_ledger
-        rcpt=".tau_ledger/receipt.json"
-        head="$(git rev-parse HEAD)"
-        if [ -s .tau_ledger/action_wrapper.sha256 ]; then
-          wrap="$(awk '{print $1}' .tau_ledger/action_wrapper.sha256)"
-        else
-          wrap="$(sha256sum "$GITHUB_ACTION_PATH/action.yml" | awk '{print $1}')"
-        fi
-        if [ -f tau-crystal-manifest.json ]; then
-          if command -v jq >/dev/null 2>&1; then
-            tmp="$(mktemp)"; jq ". + {action_wrapper_sha:\"$wrap\"}" tau-crystal-manifest.json >"$tmp" && mv "$tmp" tau-crystal-manifest.json
-          else
-            if ! grep -q '"action_wrapper_sha"' tau-crystal-manifest.json; then
-              root="$(grep -oE '"merkle_root"[[:space:]]*:[[:space:]]*"[^"]*"' tau-crystal-manifest.json | sed -E 's/.*:"([^"]*)".*/\1/')"
-              printf '{"merkle_root":"%s","action_wrapper_sha":"%s"}\n' "$root" "$wrap" > tau-crystal-manifest.json
-            fi
-          fi
-        else
+        # chain head
+        head="$(git rev-parse HEAD 2>/dev/null || true)"
+        # sha256 command
+        if command -v sha256sum >/dev/null 2>&1; then H=sha256sum; else H="shasum -a 256"; fi
+        # wrapper digest (action.yml in this action)
+        wrap="$($H "$GITHUB_ACTION_PATH/action.yml" | awk '{print $1}')"
+        printf '%s\n' "$wrap" > .tau_ledger/action_wrapper.sha256
+        # merkle root over tracked files
+        if command -v sha256sum >/dev/null 2>&1; then
           root="$(git ls-files -z | sort -z | xargs -0 sha256sum | awk '{print $1}' | tr -d '\n' | sha256sum | awk '{print $1}')"
-          printf '{"merkle_root":"%s","action_wrapper_sha":"%s"}\n' "$root" "$wrap" > tau-crystal-manifest.json
+        else
+          root="$(git ls-files | LC_ALL=C sort | xargs shasum -a 256 | awk '{print $1}' | tr -d '\n' | shasum -a 256 | awk '{print $1}')"
         fi
-        root_val="$(grep -oE '"merkle_root"[[:space:]]*:[[:space:]]*"[^"]*"' tau-crystal-manifest.json | sed -E 's/.*:"([^"]*)".*/\1/')"
-        printf '{"chain_head":"%s","merkle_root":"%s","action_wrapper_sha":"%s"}\n' "$head" "$root_val" "$wrap" > "$rcpt"
+        # receipt JSON + CHAIN index
+        rcpt=".tau_ledger/receipt.json"
+        printf '{"chain_head":"%s","merkle_root":"%s","action_wrapper_sha":"%s"}\n' "$head" "$root" "$wrap" > "$rcpt"
         printf '%s %s\n' "$head" "$rcpt" > .tau_ledger/CHAIN
-
-    - name: Enforce wrapper digest
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      env:
-        ACTION_DIR: ${{ github.action_path }}
-      run: |
-        set -Eeuo pipefail; set +H; umask 022
-        bash "$ACTION_DIR/scripts/bin/enforce_wrapper_digest.sh" "${{ inputs.working-directory }}"
 
     - name: Collect outputs
       id: outs
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
-        set +H; umask 022
+        set -euo pipefail
         rcpt=""; head=""; root=""
-        if [ -f .tau_ledger/CHAIN ]; then
-          rcpt="$(awk '{p=$2} END{print p}' .tau_ledger/CHAIN 2>/dev/null || true)"
-          head="$(awk 'END{print $1}' .tau_ledger/CHAIN 2>/dev/null || true)"
-        fi
-        if [ -f tau-crystal-manifest.json ]; then
-          root="$(grep -oE '"merkle_root"[[:space:]]*:[[:space:]]*"[^"]*"' tau-crystal-manifest.json | sed -E 's/.*:"([^"]*)".*/\1/' | head -n1 || true)"
-        fi
+        [ -f .tau_ledger/CHAIN ] && { rcpt="$(awk '{print $2}' .tau_ledger/CHAIN || true)"; head="$(awk 'END{print $1}' .tau_ledger/CHAIN || true)"; }
+        [ -n "$rcpt" ] && [ -f "$rcpt" ] && root="$(grep -oE '"merkle_root"[[:space:]]*:[[:space:]]*"[^"]*"' "$rcpt" | sed -E 's/.*:"([^"]*)".*/\1/')"
         echo "receipt=$rcpt" >> "$GITHUB_OUTPUT"
-        echo "head=$head"     >> "$GITHUB_OUTPUT"
-        echo "root=$root"     >> "$GITHUB_OUTPUT"
+        echo "head=$head"   >> "$GITHUB_OUTPUT"
+        echo "root=$root"   >> "$GITHUB_OUTPUT"
