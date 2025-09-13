@@ -15,6 +15,9 @@ inputs:
     default: "true"
 
 outputs:
+  verifier:
+    description: "Absolute path to bundled verifier script"
+    value: ${{ steps.expose.outputs.verifier }}
   receipt-path:
     description: "Latest receipt JSON path"
     value: ${{ steps.outs.outputs.receipt }}
