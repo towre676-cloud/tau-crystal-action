@@ -1,10 +1,10 @@
 # tau-crystal-verify
 
-Receipt-first, Merkle-rooted attestation for GitHub Actions via pure bash. The action measures itself and your repository, emits a chained SHA-256 receipt, and fails if any measured byte drifts. Runs on ubuntu-latest with no containers, no extra runtimes, and no privileged tokens.
+Prove what ran: receipt-first attestation for GitHub Actions in pure bash. It measures itself and your repository, emits a chained SHA-256 receipt, and fails if any byte drifts. Runs on ubuntu-latest with no containers, no extra runtimes, and no privileged tokens.
 
 ## Quick start
 
-Add a step to your workflow that references this action at a tagged release. It writes a JSON receipt and exits nonzero if the wrapper, repository tree digest, or commit reference disagree with expectations.
+Drop this into any workflow. It writes a JSON receipt and exits non-zero if the wrapper, tree digest, or commit deviates.
 
 ```yaml
 jobs:
@@ -17,13 +17,14 @@ jobs:
           working-directory: .  # repository root to measure
           out: .tau_ledger/receipt.json
       - name: verify receipt
-        run: bash verify/verify-receipt.sh .tau_ledger/receipt.json
+        run: bash verify/verify-receipt.sh \\
+               .tau_ledger/receipt.json
 ```
 
 ## What it records
 
-The receipt binds the exact Git commit, a Merkle-style tree digest over tracked files, and the digest of the wrapper that produced the run. Because the wrapper hash is included in the receipt, any silent edit to the action metadata or entrypoint causes the next run to fail.
+The receipt binds the commit ID, a Merkle tree over tracked files, and the digest of the wrapper that produced the run. Because that digest is sealed into the receipt, any silent edit to the action metadata or entrypoint breaks the chain on the next run.
 
 ## Outputs and verification
 
-The JSON receipt is plain text and ships with a pinned schema in this repository. A bash verifier is included so downstream jobs can recheck the receipt before deploy with no extra tools.
+The receipt is plain JSON and ships with a pinned schema in this repository. A bash verifier lets downstream jobs recheck it before deploy with zero extra tools.
