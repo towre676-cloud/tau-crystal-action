@@ -1,5 +1,7 @@
 # tau-crystal-action
 
+![tau-crystal verified](https://img.shields.io/badge/receipt-verified-brightgreen)
+
 Prove what ran — receipt-first, Merkle-rooted attestation for GitHub Actions in pure bash.
 
 ### One-liner (optional local verifier)
@@ -35,3 +37,7 @@ Emits a chained SHA-256 receipt binding the exact commit, Merkle tree over track
 
 ### Demos & docs
 See full monographs and examples: https://github.com/towre676-cloud/tau_crystal
+
+JSON schema: [schema-action-outputs.json](schema-action-outputs.json) — IDE autocomplete ready.
+
+Deep dive & physics demos: [towre676-cloud/tau_crystal](https://github.com/towre676-cloud/tau_crystal)
