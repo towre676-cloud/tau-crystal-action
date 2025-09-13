@@ -35,9 +35,9 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        v="/verify/verify-receipt.sh"
-        chmod +x ""
-        echo "verifier=" >> ""
+        v="$GITHUB_ACTION_PATH/verify/verify-receipt.sh"
+        chmod +x "$v"
+        echo "verifier=$v" >> "$GITHUB_OUTPUT"
     - name: Install elan (optional)
       if: ${{ inputs.install-elan == 'true' }}
       shell: bash
