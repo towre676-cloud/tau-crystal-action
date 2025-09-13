@@ -2,6 +2,8 @@
 
 ![tau-crystal verified](https://img.shields.io/badge/receipt-verified-brightgreen)
 
+![tau-crystal verified](https://img.shields.io/badge/receipt-verified-brightgreen)
+
 Prove what ran — receipt-first, Merkle-rooted attestation for GitHub Actions in pure bash.
 
 ### One-liner (optional local verifier)
