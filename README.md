@@ -45,3 +45,18 @@ See full monographs and examples: https://github.com/towre676-cloud/tau_crystal
 JSON schema: [schema-action-outputs.json](schema-action-outputs.json) — IDE autocomplete ready.
 
 Deep dive & physics demos: [towre676-cloud/tau_crystal](https://github.com/towre676-cloud/tau_crystal)
+
+## Bundled verifier usage
+
+Use the verifier that ships inside the action (no curl, no PATH changes):
+```yaml
+- uses: towre676-cloud/tau-crystal-action@v1
+  id: tau
+  with:
+    working-directory: .
+- name: verify receipt (bundled)
+  run: ${{ steps.tau.outputs.verifier }} \
+       ${{ steps.tau.outputs.receipt }} \
+       ${{ steps.tau.outputs.chain-head }} \
+       ${{ steps.tau.outputs.merkle-root }}
+```
