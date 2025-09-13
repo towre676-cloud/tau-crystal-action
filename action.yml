@@ -80,6 +80,20 @@ runs:
         set -Eeuo pipefail; set +H; umask 022
         bash "$ACTION_DIR/scripts/bin/enforce_wrapper_digest.sh" "${{ inputs.working-directory }}"
 
+    - name: Ensure receipt (fallback)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail; set +H; umask 022
+        mkdir -p .tau_ledger
+        if [ ! -s .tau_ledger/CHAIN ]; then
+          head=$(git rev-parse HEAD)
+          wrapper=$(sha256sum "$GITHUB_ACTION_PATH/action.yml" | awk '{print $1}')
+          root=$(git ls-files -z | sort -z | xargs -0 sha256sum | awk '{print $1}' | tr -d '\n' | sha256sum | awk '{print $1}')
+          rcpt=.tau_ledger/receipt.json
+          printf '{"chain_head":"%s","merkle_root":"%s","wrapper_digest":"%s"}\n' "$head" "$root" "$wrapper" > "$rcpt"
+          printf '%s %s\n' "$head" "$rcpt" > .tau_ledger/CHAIN
+        fi
     - name: Collect outputs
       id: outs
       shell: bash
