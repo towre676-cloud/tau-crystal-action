@@ -44,3 +44,11 @@ The receipt is plain JSON and ships with a pinned schema in this repository. A b
 | `receipt`     | Path to the emitted JSON receipt                      |
 | `chain-head`  | SHA-256 of the wrapper recorded in the receipt        |
 | `merkle-root` | Tree digest over tracked files for the measured repo  |
+
+## Local verification (optional)
+
+Install the CLI to verify receipts on your machine:
+\`curl -sSL https://raw.githubusercontent.com/towre676-cloud/tau-install/main/install.sh | bash\`
+
+Then run:
+\`tau verify receipt.json <head> <root>\`
