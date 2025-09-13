@@ -2,9 +2,8 @@ name: "τ-Crystal Verify"
 description: "Receipt-first, Merkle-rooted attestation via pure bash (Lean optional via elan)."
 author: "towre676-cloud"
 branding:
-  icon: "lock"
-  color: "purple"
-
+  icon: shield
+  color: purple
 inputs:
   working-directory:
     description: "Path to verify"
