@@ -1,4 +1,5 @@
+*.yml text eol=lf
+*.yaml text eol=lf
 *.sh text eol=lf
 verify/* text eol=lf
 scripts/* text eol=lf
-action.yml text eol=lf
